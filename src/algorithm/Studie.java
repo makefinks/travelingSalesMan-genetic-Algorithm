@@ -1,34 +1,50 @@
 package algorithm;
 
+import com.sun.jdi.connect.Connector;
+
+import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.spi.BreakIteratorProvider;
 import java.util.*;
 import java.util.List;
+import java.util.Timer;
+import java.util.stream.Collectors;
 
 
-public class Studie {
+public class Studie{
 
     public static double[][] nodeDistances;
+    public static ArrayList<Point> points;
+    public static ArrayList<Point> pointBestRoute;
+    public static ArrayList<Point> pointFirstRoute;
+    public static int bestCaseGen;
 
+    public static Random random;
     Element bestRoute = null;
-    static int currentGen = 50;
-    static int elite = 10;
-    static int max = 10;
+    static int currentGen = 400;
+    static int elite = 200;
+    static int max = 10_0000;
+
+    static int gencount;
 
     public static void main(String[] args) throws FileNotFoundException {
 
-        String input = "input";
+        random = new Random();
+
+        createNodes(50, 10000, "input");
+
+        String input = "inputAlt";
         Scanner sc = new Scanner(new File(input));
-        ArrayList<Point> points = new ArrayList<>();
+        points = new ArrayList<>();
         while (sc.hasNext()) {
-            String line = sc.nextLine();
-            //line.line.matches("=[0-9]*");
-            String[] splitted = line.split(",|=");
-            System.out.println(Arrays.toString(splitted));
-            int x = Integer.parseInt(splitted[1]);
-            int y = Integer.parseInt(splitted[3]);
-            points.add(new Point(x, y));
+            int müll = sc.nextInt();
+            int x = sc.nextInt();
+            int y = sc.nextInt();
+            points.add(new Point(x,y));
         }
         nodeDistances = new double[points.size()][points.size()];
 
@@ -39,17 +55,99 @@ public class Studie {
             }
             System.out.println();
         }
+
+        Element bestCase;
+        Element firstCase;
+
         //create Generation Zero and sort after fitness
         ArrayList<Element> currentGen = createGeneration();
-        for (int gencount = 0; gencount < max; gencount++) {
+        bestCase = currentGen.get(0);
+        firstCase = currentGen.get(0);
+
+        pointFirstRoute = new ArrayList<>();
+        for (int i = 0; i < firstCase.points.length; i++) {
+            pointFirstRoute.add(points.get(firstCase.points[i]));
+        }
+        pointFirstRoute.add(points.get(firstCase.points[0]));
+
+
+        //Jframe
+        JFrame frame = new JFrame();
+        frame.setVisible(true);
+        frame.setPreferredSize(new Dimension(500, 500));
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+        frame.setSize(new Dimension(900, 700));
+
+        JPanel paintframe = new JPanel();
+        frame.add(paintframe, BorderLayout.CENTER);
+
+
+        for (gencount = 0; gencount < max; gencount++) {
+
+            //System.out.println("-".repeat(40) + "Gen"+gencount + "-".repeat(40));
             currentGen.sort((x, y) -> Double.compare(x.fitness, y.fitness));
-            currentGen.stream().forEach(x -> System.out.println(x + " fitness: " + x.calcFitness(nodeDistances)));
+            //currentGen.stream().forEach(x -> System.out.println(x + " fitness: " + x.calcFitness(nodeDistances)));
+
+            if(currentGen.get(0).calcFitness(nodeDistances) < bestCase.calcFitness(nodeDistances)){
+                bestCase = currentGen.get(0);
+                bestCaseGen = gencount;
+                System.out.println("new bestcase:  gen-> " + gencount + " fit-> " + bestCase.calcFitness(nodeDistances));
+
+
+                    //visualization:
+                    pointBestRoute = new ArrayList<>();
+                    for (int i = 0; i < bestCase.points.length; i++) {
+                        pointBestRoute.add(points.get(bestCase.points[i]));
+                    }
+                    pointBestRoute.add(points.get(bestCase.points[0]));
+
+
+                    frame.remove(paintframe);
+                    paintFrame vis = new paintFrame(points, pointBestRoute, false);
+                    frame.add(vis, BorderLayout.CENTER);
+                    frame.validate();
+
+
+            }
 
             //create new Generation with elite Parents
-            ArrayList<Element> nextGen = new ArrayList<>();
+            ArrayList<Element> eliteSelection = (ArrayList<Element>) currentGen.stream().limit(elite).collect(Collectors.toList());
+            ArrayList<Element> newGen = new ArrayList<>();
+            //start crossover of elite generation
+            int mutationCount = 0;
+            for(int i = 0; i<eliteSelection.size()-1; i++){
+                Element crossed = crossOver(eliteSelection.get(i), eliteSelection.get(i+1));
+                newGen.add(crossed);
 
+                //mutated child
 
+                if(Math.random() > 0.0){
+                    newGen.add(mutate(crossed));
+                    mutationCount++;
+                }
+
+            }
+            //System.out.println("Mutations: " + mutationCount);
+            currentGen = newGen;
         }
+
+        //Summary
+        System.out.println("-".repeat(50));
+        System.out.printf("%-10s |%20f | %n","Best Case", bestCase.calcFitness(nodeDistances));
+        System.out.printf("%-10s |%20f | %n","First Case", firstCase.calcFitness(nodeDistances));
+        System.out.println("-".repeat(50));
+
+
+        //visualization:
+        pointBestRoute = new ArrayList<>();
+        for(int i = 0; i<bestCase.points.length; i++){
+            pointBestRoute.add(points.get(bestCase.points[i]));
+        }
+        pointBestRoute.add(points.get(bestCase.points[0]));
+
+        mainframe visualizer = new mainframe();
+
 
 
     }
@@ -76,6 +174,12 @@ public class Studie {
     }
 
     public static Element crossOver(Element e1, Element e2) {
+
+        //System.out.println("Crossover");
+        //System.out.println(e1);
+        //System.out.println(e2);
+
+
         int[] newGenom = new int[e1.points.length];
         Random rand = new Random();
 
@@ -92,28 +196,86 @@ public class Studie {
         }
 		//start copying indices from parent1 to child
 		for(int ix = 0; ix<rand1.size(); ix++){
-			newGenom[ix] = e1.points[rand1.get(ix)];
+			newGenom[rand1.get(ix)] = e1.points[rand1.get(ix)];
 		}
+       // System.out.println("copying indeces: " + rand1.toString());
+       // System.out.println(Arrays.toString(newGenom));
 
 		//same process for parent2
-		ArrayList<Integer> rand2 = new ArrayList<Integer>();
-		int amount2 = rand.nextInt(e1.points.length);
+		//ArrayList<Integer> rand2 = new ArrayList<Integer>();
+		//int amount2 = e1.points.length-amount;
+
 		//fill with valid indices
-		while (rand1.size() < amount) {
+		/*
+		while (rand2.size() < amount2) {
+
 			int next = rand.nextInt(e1.points.length);
-			if (!rand1.contains(next)) {
-				rand1.add(next);
+			if (!rand2.contains(next) && !rand1.contains(next)) {
+				rand2.add(next);
 			}
 		}
+		 */
+
+
 		//start copying indices from parent2 to child
-		for(int ix = 0; ix<rand1.size(); ix++){
-			newGenom[ix] = e1.points[rand1.get(ix)];
+            for(int ix = 0; ix< newGenom.length; ix++){
+                if(!rand1.contains(ix)){
+                    newGenom[ix] = e1.points[ix];
+                }
+
 		}
 
+       // System.out.println(Arrays.toString(newGenom));
+
+        return new Element(newGenom);
+    }
+
+    public static Element mutate(Element e){
+
+        int[] eArr = Arrays.copyOf(e.points, e.points.length);
+
+        int src = random.nextInt(eArr.length);
+        int target = 0;
+        do {
+            target = random.nextInt(eArr.length);
+        }while (target == src);
 
 
 
-        return null;
+        int temp = eArr[target];
+        eArr[target] = eArr[src];
+        eArr[src] = temp;
+
+        return new Element(eArr);
+    }
+
+    public static void createNodes(int n,int bound, String path) {
+
+        try(FileWriter fw = new FileWriter(path)) {
+            ArrayList<Point> nodes = new ArrayList<>();
+            Random rand = new Random();
+            for(int i=0;i<n;i++) {
+                Point p= new Point (0,0);
+                do {
+                    int x=rand.nextInt(bound);
+                    int y=rand.nextInt(bound);
+                    p=new Point(x,y);
+                }while(nodes.contains(p));
+                nodes.add(p);
+            }
+            nodes.forEach((x)-> {
+                try {
+                    fw.write(x.x+" "+x.y+"\n");
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            });
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+
     }
 
 }
