@@ -1,18 +1,26 @@
 package algorithm;
+import java.awt.*;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 
 public class Element {
 
 	int[] points;
+	ArrayList<Point> pointsL;
 	double fitness;
 	
 	public Element(int[] points) {
 		this.points = points;
 		fitness = calcFitness(Studie.nodeDistances);
-	} 	
-	
-	
+	}
+
+	public Element(ArrayList<Point> points){
+		this.pointsL = points;
+		fitness = calcFitness(Studie.nodeDistances);
+	}
+
 	public double calcFitness(double[][] distances) {
 		double fitness = 0;
 		for(int i = 0; i<points.length-1; i++) {

@@ -79,6 +79,7 @@ public class paintFrame extends JPanel {
             //g2d.drawOval((int)relativex,(int)relativey, 5, 5);
 
         }
+        g2d.drawString(Integer.toString(Studie.bestCaseGen), 0, 10);
         for (int i = 0; i < route.size() - 1; i++) {
 
             Point p1 = route.get(i);
@@ -92,7 +93,6 @@ public class paintFrame extends JPanel {
             g2d.setColor(Color.CYAN);
             Line2D.Double line = new Line2D.Double(x1, y1, x2, y2);
             g2d.draw(line);
-            g2d.drawString(Integer.toString(Studie.bestCaseGen), 0, 10);
             // g2d.drawLine((int)Math.round(x1+2.5), (int)Math.round(y1+2.5), (int)Math.round(x2+2.5), (int)Math.round(y2+2.5));
         }
         if(drawFirst){
@@ -106,7 +106,7 @@ public class paintFrame extends JPanel {
                 double x2 = ex * p2.x + 2.5;
                 double y2 = ey * p2.y + 2.5;
 
-                g2d.setColor(new Color(211,211,211, 75));
+                g2d.setColor(new Color(255,0,0, 75));
 
                 Line2D.Double line = new Line2D.Double(x1, y1, x2, y2);
                 g2d.draw(line);
@@ -114,8 +114,7 @@ public class paintFrame extends JPanel {
                 // g2d.drawLine((int)Math.round(x1+2.5), (int)Math.round(y1+2.5), (int)Math.round(x2+2.5), (int)Math.round(y2+2.5));
             }
         }
-
-        repaint();
+        //repaint();
         }
     }
 
