@@ -22,24 +22,28 @@ public class Studie {
     public static ArrayList<Point> points;
     public static ArrayList<Point> pointBestRoute;
     public static ArrayList<Point> pointFirstRoute;
-
     public static ArrayList<Element> currentGen;
     public static int bestCaseGen;
-
+    public static Element bestCase;
+    public static Element firstCase;
     public static double worstFitness;
-
     public static HashMap<Integer, Double> fitnessHistory;
-    public static Random random;
 
+    public static Element bestCaseLastGen;
+    public static Random random;
 
     Element bestRoute = null;
 
+
+
+    //PARAMETERS FOR OPTIMIZING THE ALGORITHM
     //America best Setting:   genzero = 400; elite 300;
     static int genZero = 400;
 
     static int elite = 100;
 
     static int max = 100_000;
+    static int mutations = 2;
 
     static int gencount;
 
@@ -61,7 +65,7 @@ public class Studie {
                  .
          */
 
-        String input = "input699";
+        String input = "input";
 
         //read input file and create List of Points
         Scanner sc = new Scanner(new File(input));
@@ -82,9 +86,6 @@ public class Studie {
             }
             System.out.println();
         }
-
-        Element bestCase;
-        Element firstCase;
 
         //create Generation Zero and sort depending on Fitness
         currentGen = createGeneration();
@@ -116,12 +117,8 @@ public class Studie {
         rightGraphs.add(fitGraph, 0);
 
         JPanel infoPanel = new JPanel();
-        infoPanel.setVisible(true);
-        infoPanel.setLayout(new GridLayout(4, 1));
-        infoPanel.setBackground(Color.BLACK);
+        rightGraphs.add(infoPanel, 1);
 
-
-        rightGraphs.add(infoPanel,1);
         frame.add(rightGraphs, BorderLayout.EAST);
 
         fitnessHistory = new HashMap<>();
@@ -130,14 +127,18 @@ public class Studie {
 
             rightGraphs.remove(0);
             rightGraphs.add(new fitGraph(), 0);
-            frame.validate();
 
+            rightGraphs.remove(1);
+            rightGraphs.add(new InfoPanel(), 1);
+
+            frame.validate();
 
             //System.out.println("-".repeat(40) + "Gen"+gencount + "-".repeat(40));
             currentGen.sort((x, y) -> Double.compare(x.fitness, y.fitness));
             //currentGen.stream().forEach(x -> System.out.println(x + " fitness: " + x.calcFitness(nodeDistances)));
 
             fitnessHistory.put(gencount, currentGen.get(0).calcFitness(nodeDistances));
+
             if (currentGen.get(0).calcFitness(nodeDistances) < bestCase.calcFitness(nodeDistances)) {
                 bestCase = currentGen.get(0);
                 bestCaseGen = gencount;
@@ -177,6 +178,7 @@ public class Studie {
             }
 
             currentGen = newGen;
+
         }
 
         //Summary
@@ -245,24 +247,6 @@ public class Studie {
         for (int ix = 0; ix < rand1.size(); ix++) {
             newGenom[rand1.get(ix)] = e1.points[rand1.get(ix)];
         }
-        // System.out.println("copying indeces: " + rand1.toString());
-        // System.out.println(Arrays.toString(newGenom));
-
-        //same process for parent2
-        //ArrayList<Integer> rand2 = new ArrayList<Integer>();
-        //int amount2 = e1.points.length-amount;
-
-        //fill with valid indices
-		/*
-		while (rand2.size() < amount2) {
-
-			int next = rand.nextInt(e1.points.length);
-			if (!rand2.contains(next) && !rand1.contains(next)) {
-				rand2.add(next);
-			}
-		}
-		 */
-
 
         //start copying indices from parent2 to child
         for (int ix = 0; ix < newGenom.length; ix++) {
@@ -271,9 +255,6 @@ public class Studie {
             }
 
         }
-
-        // System.out.println(Arrays.toString(newGenom));
-
         return new Element(newGenom);
     }
 
@@ -281,7 +262,7 @@ public class Studie {
 
         int[] eArr = Arrays.copyOf(e.points, e.points.length);
 
-        for(int i = 0; i<2; i++) {
+        for(int i = 0; i<mutations; i++) {
             int src = random.nextInt(eArr.length);
             int target = 0;
             do {

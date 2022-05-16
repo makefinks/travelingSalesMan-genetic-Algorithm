@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class fitGraph extends JPanel {
+public class fitGraph extends JPanel{
 
     public fitGraph() {
         setVisible(true);
@@ -35,8 +35,7 @@ public class fitGraph extends JPanel {
 
        double ex = panelWidth / Studie.max;
        double ey = panelHeight / Studie.worstFitness;
-        g2d.setColor(Color.YELLOW);
-
+       g2d.setColor(Color.YELLOW);
 
 
         HashMap<Integer, Double> copy = (HashMap<Integer, Double>) Studie.fitnessHistory.clone();
@@ -49,10 +48,12 @@ public class fitGraph extends JPanel {
 
            if(gen == copy.size()-1){
                g2d.setFont(new Font("Arial", Font.PLAIN, 16));
-               g2d.drawString(Double.toString(Studie.fitnessHistory.get(gen)), (int)x, (int)y);
+               g2d.drawString(Double.toString(copy.get(gen)), (int)x, (int)y);
            }
 
        }
+
+
 
 
 
