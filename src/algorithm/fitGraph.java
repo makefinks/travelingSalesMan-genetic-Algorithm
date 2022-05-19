@@ -38,17 +38,15 @@ public class fitGraph extends JPanel{
        g2d.setColor(Color.YELLOW);
 
 
-        HashMap<Integer, Double> copy = (HashMap<Integer, Double>) Studie.fitnessHistory.clone();
-
-       for(Integer gen : copy.keySet()){
+       for(Integer gen : Studie.fitnessHistory.keySet()){
            double x = ex*gen;
            double y = panelHeight-ey*Studie.fitnessHistory.get(gen);
            Ellipse2D.Double o = new Ellipse2D.Double(x, y, 2, 2);
            g2d.fill(o);
 
-           if(gen == copy.size()-1){
+           if(gen == Studie.fitnessHistory.size()-1){
                g2d.setFont(new Font("Arial", Font.PLAIN, 16));
-               g2d.drawString(Double.toString(copy.get(gen)), (int)x, (int)y);
+               g2d.drawString(Double.toString(Studie.fitnessHistory.get(gen)), (int)x, (int)y);
            }
 
        }

@@ -1,20 +1,14 @@
 package algorithm;
 
-import com.sun.jdi.connect.Connector;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.text.spi.BreakIteratorProvider;
 import java.util.*;
-import java.util.List;
-import java.util.Timer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 
 public class Studie {
 
@@ -27,31 +21,33 @@ public class Studie {
     public static Element bestCase;
     public static Element firstCase;
     public static double worstFitness;
-    public static HashMap<Integer, Double> fitnessHistory;
-
-    public static Element bestCaseLastGen;
+    public static ConcurrentHashMap<Integer, Double> fitnessHistory;
+    public static ArrayList<Integer> bestCaseGens;
     public static Random random;
+    static int gencount;
+    static int fitCalcCount = 0;
 
-    Element bestRoute = null;
-
-
-
+    //***********************************************************
     //PARAMETERS FOR OPTIMIZING THE ALGORITHM
     //America best Setting:   genzero = 400; elite 300;
-    static int genZero = 400;
+    static String input = "inputAlt";   //specifies the file to be used as input
+    static int genZero = 400;   //specifies how many permutations are used in gen zero
+    static int elite = 10;     //specifies how many parents are chosen after sorting
+    static int max = 100000;     //specifies how many generations will be created
+    static int mutations = 4;   //specifies how many Elements are switched while mutating
+    static int mutationProbability = 100;        //the probability for mutation
+    static int crossoverProbability = 100;       //the probability for crossover of two parents
+    static int fitCap = 1000000000;
+    //***********************************************************
 
-    static int elite = 100;
-
-    static int max = 100_000;
-    static int mutations = 2;
-
-    static int gencount;
+    //
 
     public static void main(String[] args) throws FileNotFoundException {
 
         random = new Random();
+        bestCaseGens = new ArrayList<>();
 
-        //createNodes(100, 10000, "input");
+        createNodes(10, 10000, "input");
 
         /*
         Specify input file with format:
@@ -64,8 +60,6 @@ public class Studie {
                  ..
                  .
          */
-
-        String input = "input";
 
         //read input file and create List of Points
         Scanner sc = new Scanner(new File(input));
@@ -82,16 +76,16 @@ public class Studie {
         for (int i = 0; i < points.size(); i++) {
             for (int x = 0; x < points.size(); x++) {
                 nodeDistances[i][x] = points.get(i).distance(points.get(x));
-                System.out.printf("%-15f", nodeDistances[i][x]);
+                //System.out.printf("%-15f", nodeDistances[i][x]);
             }
-            System.out.println();
+            //System.out.println();
         }
 
         //create Generation Zero and sort depending on Fitness
         currentGen = createGeneration();
         bestCase = currentGen.get(0);
         firstCase = currentGen.get(0);
-        worstFitness = currentGen.get(0).calcFitness(nodeDistances);
+        worstFitness = currentGen.get(0).calcFitness(nodeDistances, false);
 
         pointFirstRoute = new ArrayList<>();
         for (int i = 0; i < firstCase.points.length; i++) {
@@ -99,7 +93,7 @@ public class Studie {
         }
         pointFirstRoute.add(points.get(firstCase.points[0]));
 
-        //Jframe
+        //JFrame
         JFrame frame = new JFrame();
         frame.setVisible(true);
         frame.setPreferredSize(new Dimension(500, 500));
@@ -121,7 +115,7 @@ public class Studie {
 
         frame.add(rightGraphs, BorderLayout.EAST);
 
-        fitnessHistory = new HashMap<>();
+        fitnessHistory = new ConcurrentHashMap<>();
 
         for (gencount = 0; gencount < max; gencount++) {
 
@@ -137,13 +131,14 @@ public class Studie {
             currentGen.sort((x, y) -> Double.compare(x.fitness, y.fitness));
             //currentGen.stream().forEach(x -> System.out.println(x + " fitness: " + x.calcFitness(nodeDistances)));
 
-            fitnessHistory.put(gencount, currentGen.get(0).calcFitness(nodeDistances));
+            fitnessHistory.put(gencount, currentGen.get(0).calcFitness(nodeDistances, false));
 
-            if (currentGen.get(0).calcFitness(nodeDistances) < bestCase.calcFitness(nodeDistances)) {
+            if (currentGen.get(0).calcFitness(nodeDistances, false) < bestCase.calcFitness(nodeDistances, false)) {
                 bestCase = currentGen.get(0);
                 bestCaseGen = gencount;
+                bestCaseGens.add(gencount);
 
-                System.out.println("new bestcase:  gen-> " + gencount + " fit-> " + bestCase.calcFitness(nodeDistances));
+                System.out.println("new bestcase:  gen-> " + gencount + " fit-> " + bestCase.calcFitness(nodeDistances, false));
 
 
                 //MID-VISUALS:
@@ -164,35 +159,42 @@ public class Studie {
             //create new Generation with elite Parents
             ArrayList<Element> eliteSelection = (ArrayList<Element>) currentGen.stream().limit(elite).collect(Collectors.toList());
             ArrayList<Element> newGen = new ArrayList<>();
-          //  currentGen.stream().limit(20).forEach(newGen::add);
+            //  currentGen.stream().limit(20).forEach(newGen::add);
             //start crossover of elite generation
-            int mutationCount = 0;
+            int mutationCount =  0;
             for (int i = 0; i < eliteSelection.size() - 1; i++) {
-                Element crossed = crossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
-                newGen.add(crossed);
-                //mutated child
-                if (Math.random() > 0.0) {
-                    newGen.add(mutate(crossed));
-                    mutationCount++;
+                //MARK: Crossover
+                double crossProb = (double) crossoverProbability / (double) 100;
+                if (Math.random() > 1 - crossProb) {
+                    Element crossed = crossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
+                    newGen.add(crossed);
+
+                    //MARK: Mutation
+                    double mutProb = (double) mutationProbability / (double) 100;
+                    if (Math.random() > 1 - mutProb) {
+                        newGen.add(mutate(crossed));
+                        mutationCount++;
+                    }
                 }
             }
-
-            currentGen = newGen;
-
+                if(fitCalcCount > fitCap){
+                    fitCalcCount = fitCap;
+                    break;
+                }
+                currentGen = newGen;
         }
-
         //Summary
         System.out.println("-".repeat(50));
-        System.out.printf("%-10s |%20f | %n", "Best Case", bestCase.calcFitness(nodeDistances));
-        System.out.printf("%-10s |%20f | %n", "First Case", firstCase.calcFitness(nodeDistances));
+        System.out.printf("%-10s |%20f | %n", "Best Case", bestCase.calcFitness(nodeDistances, false));
+        System.out.printf("%-10s |%20f | %n", "First Case", firstCase.calcFitness(nodeDistances, false));
 
         System.out.println("-".repeat(35));
-        double difference = -(bestCase.calcFitness(nodeDistances) - firstCase.calcFitness(nodeDistances)) / firstCase.calcFitness(nodeDistances);
+        double difference = -(bestCase.calcFitness(nodeDistances, false) - firstCase.calcFitness(nodeDistances, false)) / firstCase.calcFitness(nodeDistances, false);
         System.out.printf("Verbesserung %18f %% %n", difference * 100);
         System.out.println("-".repeat(50));
 
 
-        //visualization:
+        //Summary visualization:
         pointBestRoute = new ArrayList<>();
         for (int i = 0; i < bestCase.points.length; i++) {
             pointBestRoute.add(points.get(bestCase.points[i]));
@@ -201,9 +203,6 @@ public class Studie {
 
         frame.add(new paintFrame(points, pointBestRoute, true), BorderLayout.CENTER);
         frame.validate();
-
-
-
     }
 
     public static ArrayList<Element> createGeneration() {
@@ -223,12 +222,12 @@ public class Studie {
             nums.add(i);
         }
         Collections.shuffle(nums);
-
         return new Element(nums.stream().mapToInt(i -> i).toArray());
     }
 
     public static Element crossOver(Element e1, Element e2) {
 
+/*      THIS METHOD WORKS BETTER THAN MERGING TWO PARENTS
         int[] newGenom = new int[e1.points.length];
         Random rand = new Random();
 
@@ -249,14 +248,72 @@ public class Studie {
         }
 
         //start copying indices from parent2 to child
+
         for (int ix = 0; ix < newGenom.length; ix++) {
             if (!rand1.contains(ix)) {
                 newGenom[ix] = e1.points[ix];
             }
-
         }
+
         return new Element(newGenom);
+ */
+
+
+        //Creates random indices only containing an index once
+        ArrayList<Integer> randomIndices = new ArrayList<>();
+        int[] newGenom = new int[e1.points.length];
+        while(randomIndices.size() < random.nextInt(e1.points.length)){
+            int idx = random.nextInt(e1.points.length);
+            if(!randomIndices.contains(idx)){
+                randomIndices.add(idx);
+            }
+        }
+       // System.out.println("Indeces to to choose parent 1: " + randomIndices);
+
+        //Put the numbers at the indices in parent1 at the same index in the new Genom
+        for(int i = 0; i<randomIndices.size(); i++){
+            newGenom[randomIndices.get(i)] = e1.points[randomIndices.get(i)];
+        }
+
+        //While iterating over parent 2
+        for(int idx =  0; idx<e2.points.length; idx++){
+            //if the number at idx of parent2 is already contained in newGenom do nothing
+            if(!contains(newGenom, e2.points[idx])){
+                //if idx is not contained in randomIndices put the number at index idx of parent2 at the same index in the new Genom
+                if(!randomIndices.contains(idx)){
+                    newGenom[idx] = e2.points[idx];
+                    //Because we put something at idx in newGenom no other number can be put there anymore
+                    //To ensure that add idx to randomIndices
+                    randomIndices.add(idx);
+                //if idx is contained in randomIndices iterate over newGenom and find an index that is not already used
+                }else {
+                    int count = 0;
+                    while (randomIndices.contains(count)) {
+                        count++;
+                    }
+                    //Put the number idx of parent2 at the newly located index count in new Genom
+                    newGenom[count] = e2.points[idx];
+                    //No other number can be placed at count anymore
+                    //To ensure that add count to randomIndices
+                    randomIndices.add(count);
+                }
+            }
+        }
+        //System.out.println(Arrays.toString(newGenom));
+        return new Element(newGenom);
+
+
     }
+
+    public static boolean contains(int[] arr, int num){
+        for(int i : arr){
+            if(i == num){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public static Element mutate(Element e) {
 
