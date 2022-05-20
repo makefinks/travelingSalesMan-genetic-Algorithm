@@ -14,7 +14,8 @@ public class CrossOvertest {
         int[] parent1 = {1, 2, 3, 4, 5, 6, 7, 8};
         int[] parent2 = {3, 4 ,1, 2, 8, 5, 7, 6};
 
-        crossOver(parent1, parent2);
+        //crossOver(parent1, parent2);
+        splitCrossOver(parent1, parent2);
     }
 
 
@@ -67,5 +68,28 @@ public class CrossOvertest {
             }
         }
         return false;
+    }
+
+    public static int[] splitCrossOver(int[] e1, int[] e2){
+
+        Random rand = new Random();
+        int[] newGenom = new int[e1.length];
+        ArrayList<Integer> addedNums = new ArrayList<>();
+        //split e1 at random index
+        int splitIdx = rand.nextInt(e1.length);
+        for(int i = 0; i<splitIdx; i++){
+            newGenom[i] = e1[i];
+            addedNums.add(e1[i]);
+        }
+        //fill rest with parent2 points if they are not already contained
+        for(int i = splitIdx; i<newGenom.length; i++){
+            int count = 0;
+            while(addedNums.contains(e2[count])){
+                count++;
+            }
+            newGenom[i] = e2[count];
+            addedNums.add(e2[count]);
+        }
+        return newGenom;
     }
 }

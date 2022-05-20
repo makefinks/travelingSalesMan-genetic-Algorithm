@@ -110,6 +110,7 @@ public class paintFrame extends JPanel {
 
                 Line2D.Double line = new Line2D.Double(x1, y1, x2, y2);
                 g2d.draw(line);
+                g2d.setFont(new Font("Arial", Font.PLAIN, 2));
                 g2d.drawString(Integer.toString(Studie.bestCaseGen), 0, 10);
                 // g2d.drawLine((int)Math.round(x1+2.5), (int)Math.round(y1+2.5), (int)Math.round(x2+2.5), (int)Math.round(y2+2.5));
             }
