@@ -4,18 +4,14 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-
 public class Element {
-
 	int[] points;
 	ArrayList<Point> pointsL;
 	double fitness;
-	
 	public Element(int[] points) {
 		this.points = points;
 		fitness = calcFitness(Studie.nodeDistances, true);
 	}
-
 
 	public double calcFitness(double[][] distances, boolean count) {
 		double fitness = 0;
@@ -26,30 +22,16 @@ public class Element {
 		if(count){	Studie.fitCalcCount++;}
 		return fitness;
 	}
-
 	public double getFitness(){
 		return fitness;
 	}
-
 	@Override
 	public boolean equals(Object obj) {
-
-
 		Element other = (Element) obj;
-
-		/*
-		System.out.println(Arrays.toString(this.points));
-		System.out.println(Arrays.toString(other.points));
-		System.out.println(Arrays.equals(points, other.points));
-		 */
-
 		return Arrays.equals(points, other.points);
 	}
-
 	@Override
 	public String toString() {
 		return "Element [points=" + Arrays.toString(points) + "]";
 	}
-	
-	
 }

@@ -106,7 +106,8 @@ public class paintFrame extends JPanel {
                 double x2 = ex * p2.x + 2.5;
                 double y2 = ey * p2.y + 2.5;
 
-                g2d.setColor(new Color(255,0,0, 75));
+                g2d.setColor(new Color
+                        (255,0,0, 75));
 
                 Line2D.Double line = new Line2D.Double(x1, y1, x2, y2);
                 g2d.draw(line);

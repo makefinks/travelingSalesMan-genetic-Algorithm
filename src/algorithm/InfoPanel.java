@@ -27,7 +27,6 @@ public class InfoPanel extends JPanel {
         g2d.draw(frame);
 
         g2d.setColor(Color.WHITE);
-
         String strCurrentGen = String.format("current Gen: %20d / %d", Studie.gencount, Studie.max);
         g2d.drawString(strCurrentGen, 30, 30);
 
@@ -37,15 +36,21 @@ public class InfoPanel extends JPanel {
         double improvTotal = -(Studie.bestCase.calcFitness(Studie.nodeDistances, false) - Studie.firstCase.calcFitness(Studie.nodeDistances, false)) / Studie.firstCase.calcFitness(Studie.nodeDistances, false);
         g2d.drawString("improvement total: " + String.format("%10.2f%%", improvTotal*100), 30 , 70);
 
+        try{
         double improvLast = ((Studie.fitnessHistory.get(Studie.bestCaseGens.get(Studie.bestCaseGens.size()-2))
                 - Studie.bestCase.calcFitness(Studie.nodeDistances, false))
                 / Studie.fitnessHistory.get(Studie.bestCaseGens.get(Studie.bestCaseGens.size()-2)));
 
         g2d.drawString("improvement last: " + String.format("%14.5f%%", improvLast * 100), 30, 90);
+        }catch (Exception e){
 
+        }
 
         g2d.drawString("fitCalcCount: " + Studie.fitCalcCount, 30, 110);
+        g2d.drawString("gen size: " + Studie.currentGen.size(), 30, 130);
         g2d.drawString(String.format("First Case: %15f", Studie.firstCase.calcFitness(Studie.nodeDistances, false)), 60, 150);
         g2d.drawString(String.format("Best Case: %15f", Studie.bestCase.calcFitness(Studie.nodeDistances, false)), 60, 170);
+
+
     }
 }
