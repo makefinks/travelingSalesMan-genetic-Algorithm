@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class Studie {
@@ -38,20 +39,20 @@ public class Studie {
     //***********************************************************
     //PARAMETERS FOR OPTIMIZING THE ALGORITHM
     //America best Setting:   genzero = 400; elite 300;
-    static String input = "inputAlt";   //specifies the file to be used as input
+    static String input = "att532";   //specifies the file to be used as input
     static int genZero = 400;   //specifies how many permutations are used in gen zero
     static int elite = 300;     //specifies how many parents are chosen after sorting
-    static int keepAmount = 1;
+    static int keepAmount = 2;
     static int max = 100_000_0;     //specifies how many generations will be created
 
     //********************Mutations*******************************************
     static int mutationProbability = 100;        //the probability for mutation
-    static boolean shuffleMutation = false;
-                static int shuffleMin = 2;
-                static int shuffleMax = 3;
+    static boolean shuffleMutation = true;
+                static int shuffleMin = 5;
+                static int shuffleMax = 10;
     static boolean swapMutation = true;
-                static int mutations = 1;   //specifies how many Elements are switched while mutating
-    static boolean advancedMutate = false;
+                static int mutations = 2;   //specifies how many Elements are switched while mutating
+    static boolean advancedMutate = true;
     //*************************************************************************
     static int crossoverProbability = 100;       //the probability for crossover of two parents
     static int fitCap = Integer.MAX_VALUE;
@@ -102,6 +103,11 @@ public class Studie {
         bestCase = currentGen.get(0);
         firstCase = currentGen.get(0);
         worstFitness = currentGen.get(0).calcFitness(nodeDistances, false);
+
+
+        //optimize generation
+        preOptimize(currentGen);
+
 
         pointFirstRoute = new ArrayList<>();
         for (int i = 0; i < firstCase.points.length; i++) {
@@ -191,44 +197,55 @@ public class Studie {
                 if (Math.random() > 1 - crossProb) {
                     Element crossed;
                     Element crossedOpt;
+                    Element splitCrossed;
+                    Element paulsCross;
+                    Element mutCrossed;
 
-                    //crossed = mutCrossOver(eliteSelection.get(i), null);
+                    mutCrossed = mutCrossOver(eliteSelection.get(i), null);
                     //crossed = crossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
                     crossed = insertCrossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
 
                     crossedOpt = new Element(crossed.points);
-                   // optimize(crossedOpt, 5);
-                    //crossed = splitCrossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
-                    //crossed = paulsCross(eliteSelection.get(i), eliteSelection.get(i+1));
+                    optimize(crossedOpt, 10);
+                    splitCrossed = splitCrossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
+                    paulsCross = paulsCross(eliteSelection.get(i), eliteSelection.get(i+1));
 
                     //optimize(crossed, 5);
+
+                    newGen.add(mutCrossed);
+                    newGen.add(splitCrossed);
+                    newGen.add(paulsCross);
 
                     if(!genContains(newGen, crossed)){
                         newGen.add(crossed);
                     }
-                   // newGen.add(crossedOpt);
+                    newGen.add(crossedOpt);
 
                     //MARK: Mutation
                     double mutProb = (double) mutationProbability / (double) 100;
                     if (Math.random() > 1 - mutProb) {
 
 
-                        if(swapMutation){
-                        Element mutated = mutate(crossed);
-                        if(!genContains(newGen, mutated)){
-                            newGen.add(mutated);
+                        if (swapMutation) {
+                            Element mutated = mutate(crossed);
+                            Element mutMutCross = mutate(mutCrossed);
+                            Element mutSplit = mutate(splitCrossed);
+                            Element mutPaul = mutate(paulsCross);
+                            if (!genContains(newGen, mutated)) {
+                                newGen.add(mutated);
+                            }
+
+                        }
+                        if (shuffleMutation) {
+                            Element shuff = shuffleMutate(crossed, shuffleMin, shuffleMax);
+                            if (!genContains(newGen, shuff)) {
+                                newGen.add(shuff);
                             }
                         }
-                        if(shuffleMutation){
-                        Element shuff = shuffleMutate(crossed, shuffleMin, shuffleMax);
-                        if(!genContains(newGen, shuff)){
-                            newGen.add(shuff);
-                            }
-                        }
-                        if(advancedMutate){
-                        Element advMut = advancedMutate(crossed);
-                        if(!genContains(newGen, advMut)){
-                            newGen.add(advMut);
+                        if (advancedMutate) {
+                            Element advMut = advancedMutate(crossed);
+                            if (!genContains(newGen, advMut)) {
+                                newGen.add(advMut);
                             }
                         }
 
@@ -539,6 +556,31 @@ public class Studie {
             }
         }
         return false;
+    }
+
+    public static void preOptimize(ArrayList<Element> generation){
+
+        for(Element e : generation){
+            ArrayList<Integer> sRoute = new ArrayList<>();
+            ArrayList<Integer> route = (ArrayList<Integer>) Arrays.stream(e.points).boxed().collect(Collectors.toList());
+            sRoute.add(route.get(0));
+            while(sRoute.size() < route.size()){
+                double min = 100000000;
+                int point = 0;
+                for(int x=0;x<route.size(); x++){
+                    if(nodeDistances[sRoute.get(sRoute.size()-1)][route.get(x)]<min && !sRoute.contains(route.get(x))){
+                        min = nodeDistances[sRoute.get(sRoute.size()-1)][route.get(x)];
+                        point = route.get(x);
+                    }
+                }
+                sRoute.add(point);
+            }
+
+
+            int[] newGenom = sRoute.stream().mapToInt(x -> x).toArray();
+            e.points = Arrays.copyOf(newGenom, newGenom.length);
+        }
+
     }
 
 

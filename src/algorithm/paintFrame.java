@@ -75,7 +75,7 @@ public class paintFrame extends JPanel {
                 g2d.setColor(Color.YELLOW);
                 g2d.draw(node);
             }
-            g2d.drawString(Integer.toString(points.indexOf(p)), (int) relativex, (int) relativey);
+            //g2d.drawString(Integer.toString(points.indexOf(p)), (int) relativex, (int) relativey);
             //g2d.drawOval((int)relativex,(int)relativey, 5, 5);
 
         }
