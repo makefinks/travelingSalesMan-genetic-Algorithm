@@ -39,22 +39,33 @@ public class Studie {
     //***********************************************************
     //PARAMETERS FOR OPTIMIZING THE ALGORITHM
     //America best Setting:   genzero = 400; elite 300;
-    static String input = "att532";   //specifies the file to be used as input
+    static String input = "inputAlt";   //specifies the file to be used as input
     static int genZero = 400;   //specifies how many permutations are used in gen zero
-    static int elite = 300;     //specifies how many parents are chosen after sorting
-    static int keepAmount = 2;
+    static int elite = 100;     //specifies how many parents are chosen after sorting
+    static int keepAmount = 1;
     static int max = 100_000_0;     //specifies how many generations will be created
 
     //********************Mutations*******************************************
+    static int mutationCount = 10;
     static int mutationProbability = 100;        //the probability for mutation
     static boolean shuffleMutation = true;
                 static int shuffleMin = 5;
                 static int shuffleMax = 10;
     static boolean swapMutation = true;
-                static int mutations = 2;   //specifies how many Elements are switched while mutating
-    static boolean advancedMutate = true;
+                static int mutations = 5;   //specifies how many Elements are switched while mutating
+    static boolean advancedMutate = false;
     //*************************************************************************
     static int crossoverProbability = 100;       //the probability for crossover of two parents
+    static boolean insertCrossOver = false;
+    static boolean mutCrossOver = true;
+    static boolean splitCrossOver = false;
+    static boolean paulCrossOver = false;
+    static boolean checkContains = false;
+    //**************************************
+    static boolean optimizeFlag = false;
+    static int optRouteSize = 5;
+    static boolean append = true;
+    //*************************************************************************
     static int fitCap = Integer.MAX_VALUE;
     //***********************************************************
 
@@ -175,7 +186,10 @@ public class Studie {
                 paintFrame vis = new paintFrame(points, pointBestRoute, false);
                 frame.add(vis, BorderLayout.CENTER);
                 frame.validate();
-                */
+
+
+                 */
+
                 visualThread vT = new visualThread();
                 Thread vThread = new Thread(vT);
                 vThread.start();
@@ -195,46 +209,49 @@ public class Studie {
                 //MARK: Crossover
                 double crossProb = (double) crossoverProbability / (double) 100;
                 if (Math.random() > 1 - crossProb) {
-                    Element crossed;
-                    Element crossedOpt;
-                    Element splitCrossed;
-                    Element paulsCross;
-                    Element mutCrossed;
+                    Element crossed = null;
 
-                    mutCrossed = mutCrossOver(eliteSelection.get(i), null);
-                    //crossed = crossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
-                    crossed = insertCrossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
+                    if(splitCrossOver){
+                        crossed = splitCrossOver(eliteSelection.get(i), eliteSelection.get(i+1));
+                    }
+                    if(insertCrossOver){
+                        crossed = insertCrossOver(eliteSelection.get(i), eliteSelection.get(i+1));
+                    }
+                    if(mutCrossOver){
+                            crossed = mutCrossOver(eliteSelection.get(i));
+                    }
+                    if(paulCrossOver){
+                        crossed = paulsCross(eliteSelection.get(i), eliteSelection.get(i+1));
+                    }
 
-                    crossedOpt = new Element(crossed.points);
-                    optimize(crossedOpt, 10);
-                    splitCrossed = splitCrossOver(eliteSelection.get(i), eliteSelection.get(i + 1));
-                    paulsCross = paulsCross(eliteSelection.get(i), eliteSelection.get(i+1));
+                    if(optimizeFlag){
+                        if(append){
+                            Element copy = new Element(Arrays.copyOf(crossed.points, crossed.points.length));
+                            optimize(copy, optRouteSize);
+                            newGen.add(copy);
+                            newGen.add(crossed);
+                        }
+                        newGen.add(optimize(crossed, optRouteSize));
+                    }
 
-                    //optimize(crossed, 5);
-
-                    newGen.add(mutCrossed);
-                    newGen.add(splitCrossed);
-                    newGen.add(paulsCross);
-
-                    if(!genContains(newGen, crossed)){
+                    if(checkContains) {
+                        if (!genContains(newGen, crossed)) {
+                            newGen.add(crossed);
+                        }
+                    }else {
                         newGen.add(crossed);
                     }
-                    newGen.add(crossedOpt);
 
                     //MARK: Mutation
                     double mutProb = (double) mutationProbability / (double) 100;
                     if (Math.random() > 1 - mutProb) {
 
-
+                    for(int c = 0; c<mutationCount; c++) {
                         if (swapMutation) {
                             Element mutated = mutate(crossed);
-                            Element mutMutCross = mutate(mutCrossed);
-                            Element mutSplit = mutate(splitCrossed);
-                            Element mutPaul = mutate(paulsCross);
                             if (!genContains(newGen, mutated)) {
                                 newGen.add(mutated);
                             }
-
                         }
                         if (shuffleMutation) {
                             Element shuff = shuffleMutate(crossed, shuffleMin, shuffleMax);
@@ -248,8 +265,7 @@ public class Studie {
                                 newGen.add(advMut);
                             }
                         }
-
-
+                    }
                     }
                 }
             }
@@ -266,7 +282,6 @@ public class Studie {
                     break;
                 }
                 currentGen = newGen;
-
         }
         //Summary
         System.out.println("-".repeat(50));
@@ -424,7 +439,7 @@ public class Studie {
         return new Element(newGenom);
     }
 
-    public static Element mutCrossOver(Element e1, Element e2){
+    public static Element mutCrossOver(Element e1){
 
         int[] newGenom = new int[e1.points.length];
         Random rand = new Random();
