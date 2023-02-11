@@ -11,3 +11,4 @@ Depending on the probability of mutation, a copy of a child is added that differ
 <img width="1202" alt="Bildschirmfoto 2022-10-06 um 15 19 22" src="https://user-images.githubusercontent.com/62705365/194323417-4f3f798b-f473-499b-b39b-207377430d90.png">
 Best route: &nbsp; &nbsp; White </br>
 Best route Generation zero:   Gray
+Yellow graph: fitness history
